@@ -3,7 +3,6 @@ package goyek
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"regexp"
 )
@@ -21,7 +20,10 @@ const (
 // Use Register methods to register all tasks
 // and Run or Main method to execute provided tasks.
 type Taskflow struct {
-	Output io.Writer // output where text is printed; os.Stdout by default
+	// Output specifies the writers where text is to be printed.
+	// If a writer is nil, Goyek uses defaults: os.Stdout for Standard, os.Stderr for Messaging.
+	// If you want to explicitly skip output, set the corresponding member to ioutil.Discard.
+	Output Output
 
 	DefaultTask RegisteredTask // task which is run when non is explicitly provided
 
@@ -184,8 +186,11 @@ func (f *Taskflow) Run(ctx context.Context, args ...string) int {
 		defaultTask: f.DefaultTask,
 	}
 
-	if flow.output == nil {
-		flow.output = os.Stdout
+	if flow.output.Standard == nil {
+		flow.output.Standard = os.Stdout
+	}
+	if flow.output.Messaging == nil {
+		flow.output.Messaging = os.Stderr
 	}
 
 	return flow.Run(ctx, args)

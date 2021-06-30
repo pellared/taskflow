@@ -259,7 +259,14 @@ func Test_invalid_args(t *testing.T) {
 }
 
 func Test_help(t *testing.T) {
-	flow := &goyek.Taskflow{}
+	standard := &strings.Builder{}
+	messaging := &strings.Builder{}
+	flow := &goyek.Taskflow{
+		Output: goyek.Output{
+			Standard:  standard,
+			Messaging: messaging,
+		},
+	}
 	fastParam := flow.RegisterBoolParam(goyek.BoolParam{
 		Name:  "fast",
 		Usage: "simulates fast-lane processing",
@@ -273,13 +280,33 @@ func Test_help(t *testing.T) {
 
 	exitCode := flow.Run(context.Background(), "-h")
 
+	assertContains(t, standard.String(), "Usage:", "should print usage to standard output")
 	assertEqual(t, exitCode, goyek.CodePass, "should return OK")
 }
 
-func Test_printing(t *testing.T) {
-	sb := &strings.Builder{}
+func Test_help_no_task(t *testing.T) {
+	standard := &strings.Builder{}
+	messaging := &strings.Builder{}
 	flow := &goyek.Taskflow{
-		Output: sb,
+		Output: goyek.Output{
+			Standard:  standard,
+			Messaging: messaging,
+		},
+	}
+	exitCode := flow.Run(context.Background())
+
+	assertContains(t, messaging.String(), "Usage:", "should print usage to messaging output")
+	assertEqual(t, exitCode, goyek.CodeInvalidArgs, "should return invalid args")
+}
+
+func Test_printing(t *testing.T) {
+	standard := &strings.Builder{}
+	messaging := &strings.Builder{}
+	flow := &goyek.Taskflow{
+		Output: goyek.Output{
+			Standard:  standard,
+			Messaging: messaging,
+		},
 	}
 	skipped := flow.Register(goyek.Task{
 		Name: "skipped",
@@ -301,8 +328,8 @@ func Test_printing(t *testing.T) {
 
 	flow.Run(context.Background(), "-v", "failing")
 
-	assertContains(t, sb.String(), "Skipf 0", "should contain proper output from \"skipped\" task")
-	assertContains(t, sb.String(), `Log 1
+	assertContains(t, messaging.String(), "Skipf 0", "should contain proper output from \"skipped\" task")
+	assertContains(t, messaging.String(), `Log 1
 Logf 2
 Error 3
 Errorf 4
@@ -319,9 +346,13 @@ func Test_concurrent_printing(t *testing.T) {
 	for _, tc := range testCases {
 		testName := fmt.Sprintf("Verbose:%v", tc.verbose)
 		t.Run(testName, func(t *testing.T) {
-			sb := &strings.Builder{}
-			flow := goyek.Taskflow{
-				Output: sb,
+			standard := &strings.Builder{}
+			messaging := &strings.Builder{}
+			flow := &goyek.Taskflow{
+				Output: goyek.Output{
+					Standard:  standard,
+					Messaging: messaging,
+				},
 			}
 			flow.Register(goyek.Task{
 				Name: "task",
@@ -344,8 +375,8 @@ func Test_concurrent_printing(t *testing.T) {
 			exitCode := flow.Run(context.Background(), args...)
 
 			assertEqual(t, exitCode, goyek.CodeFail, "should fail")
-			assertContains(t, sb.String(), "from child goroutine", "should contain log from child goroutine")
-			assertContains(t, sb.String(), "from main goroutine", "should contain log from main goroutine")
+			assertContains(t, messaging.String(), "from child goroutine", "should contain log from child goroutine")
+			assertContains(t, messaging.String(), "from main goroutine", "should contain log from main goroutine")
 		})
 	}
 }

@@ -2,7 +2,6 @@ package goyek
 
 import (
 	"context"
-	"io"
 	"runtime/debug"
 	"time"
 )
@@ -11,7 +10,7 @@ import (
 type runner struct {
 	Ctx         context.Context
 	TaskName    string
-	Output      io.Writer
+	Output      Output
 	ParamValues map[string]ParamValue
 }
 
@@ -43,11 +42,14 @@ func (r runResult) Duration() time.Duration {
 func (r runner) Run(action func(tf *TF)) runResult {
 	finished := make(chan runResult)
 	go func() {
-		writer := &syncWriter{Writer: r.Output}
+		syncedOutput := Output{
+			Standard:  &syncWriter{Writer: r.Output.Standard},
+			Messaging: &syncWriter{Writer: r.Output.Messaging},
+		}
 		tf := &TF{
 			ctx:         r.Ctx,
 			name:        r.TaskName,
-			writer:      writer,
+			output:      syncedOutput,
 			paramValues: r.ParamValues,
 		}
 		from := time.Now()

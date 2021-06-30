@@ -2,9 +2,8 @@ package goyek
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"runtime"
+	"strings"
 )
 
 // TF is a type passed to Task's Action function to manage task state.
@@ -17,7 +16,7 @@ import (
 type TF struct {
 	ctx         context.Context
 	name        string
-	writer      io.Writer
+	output      Output
 	paramValues map[string]ParamValue
 	failed      bool
 	skipped     bool
@@ -33,23 +32,27 @@ func (tf *TF) Name() string {
 	return tf.name
 }
 
-// Output returns the io.Writer used to print output.
-func (tf *TF) Output() io.Writer {
-	return tf.writer
+// Output provides the writers used to print output.
+func (tf *TF) Output() Output {
+	return tf.output
 }
 
 // Log formats its arguments using default formatting, analogous to Println,
 // and prints the text to Output. A final newline is added.
 // The text will be printed only if the task fails or taskflow is run in Verbose mode.
 func (tf *TF) Log(args ...interface{}) {
-	fmt.Fprintln(tf.writer, args...)
+	vs := make([]string, len(args))
+	for i := 0; i < len(args); i++ {
+		vs[i] = "%v"
+	}
+	tf.output.WriteMessagef(strings.Join(vs, " "), args...)
 }
 
 // Logf formats its arguments according to the format, analogous to Printf,
 // and prints the text to Output. A final newline is added.
 // The text will be printed only if the task fails or taskflow is run in Verbose mode.
 func (tf *TF) Logf(format string, args ...interface{}) {
-	fmt.Fprintf(tf.writer, format+"\n", args...)
+	tf.output.WriteMessagef(format, args...)
 }
 
 // Error is equivalent to Log followed by Fail.

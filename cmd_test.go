@@ -2,6 +2,7 @@ package goyek_test
 
 import (
 	"context"
+	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -10,9 +11,13 @@ import (
 
 func TestCmd_success(t *testing.T) {
 	taskName := "exec"
-	sb := &strings.Builder{}
+	standard := &strings.Builder{}
+	messaging := &strings.Builder{}
 	flow := &goyek.Taskflow{
-		Output: sb,
+		Output: goyek.Output{
+			Standard:  standard,
+			Messaging: messaging,
+		},
 	}
 	flow.Register(goyek.Task{
 		Name: taskName,
@@ -25,13 +30,18 @@ func TestCmd_success(t *testing.T) {
 
 	exitCode := flow.Run(context.Background(), "-v", taskName)
 
-	assertContains(t, sb.String(), "go version go", "output should contain prefix of version report")
+	assertContains(t, standard.String(), "go version go", "output should contain prefix of version report")
 	assertEqual(t, exitCode, goyek.CodePass, "task should pass")
 }
 
 func TestCmd_error(t *testing.T) {
 	taskName := "exec"
-	flow := &goyek.Taskflow{}
+	flow := &goyek.Taskflow{
+		Output: goyek.Output{
+			Standard:  ioutil.Discard,
+			Messaging: ioutil.Discard,
+		},
+	}
 	flow.Register(goyek.Task{
 		Name: taskName,
 		Action: func(tf *goyek.TF) {
