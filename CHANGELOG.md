@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This release contains multiple **breaking changes** in the Go API. It is supposed to make it cleaner.
 
+### Added
+
+- Add `Taskflow.Tasks` and `Taskflow.Params` to allow introspection of the registered tasks and parameters.
+
 ### Changed
 
 - Rename `Task.Command` field to `Action` to avoid confusion with [`exec.Command`](https://golang.org/pkg/os/exec/#Command) and `TF.Cmd`.

@@ -27,6 +27,36 @@ type Task struct {
 	Params Params
 }
 
+// RegisteredTask represents a task that has been registered to a Taskflow.
+// It can be used as a dependency for another Task.
+type RegisteredTask struct {
+	task Task
+}
+
+// Name returns the name of the task.
+func (r RegisteredTask) Name() string {
+	return r.task.Name
+}
+
+// Usage returns the description of the task.
+func (r RegisteredTask) Usage() string {
+	return r.task.Usage
+}
+
+// Params returns the task's parameters.
+func (r RegisteredTask) Params() Params {
+	params := make(Params, len(r.task.Params))
+	copy(params, r.task.Params)
+	return params
+}
+
+// Deps returns the task's dependencies.
+func (r RegisteredTask) Deps() Deps {
+	deps := make(Deps, len(r.task.Deps))
+	copy(deps, r.task.Deps)
+	return deps
+}
+
 // Deps represents a collection of registered Tasks.
 type Deps []RegisteredTask
 

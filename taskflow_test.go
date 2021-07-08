@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -547,6 +548,29 @@ func Test_wd_param_invalid(t *testing.T) {
 	assertEqual(t, exitCode, goyek.CodeInvalidArgs, "should not proceed")
 	assertEqual(t, taskRan, false, "should not run the task")
 	assertEqual(t, afterDir, beforeDir, "should change back the working directory after taskflow")
+}
+
+func Test_introspection_API(t *testing.T) {
+	flow := &goyek.Taskflow{}
+	p := flow.RegisterStringParam(goyek.StringParam{Name: "string", Usage: "text param", Default: "dft"})
+	t1 := flow.Register(goyek.Task{Name: "one", Params: goyek.Params{p}})
+	flow.Register(goyek.Task{Name: "two", Usage: "action", Deps: goyek.Deps{t1}})
+
+	tasks := flow.Tasks()
+	sort.Slice(tasks, func(i, j int) bool { return tasks[i].Name() < tasks[j].Name() })
+
+	assertEqual(t, len(tasks), 2, "should return all tasks")
+	assertEqual(t, tasks[0].Name(), "one", "should first return one")
+	assertEqual(t, tasks[0].Params()[0].Name(), "string", "should return param Name")
+	assertEqual(t, tasks[0].Params()[0].Usage(), "text param", "should return param Usage")
+	assertEqual(t, tasks[0].Params()[0].Default(), "dft", "should return param Default")
+	assertEqual(t, tasks[1].Name(), "two", "should next return two")
+	assertEqual(t, tasks[1].Usage(), "action", "should return usage")
+	assertEqual(t, tasks[1].Deps()[0].Name(), "one", "should return dependency")
+
+	params := flow.Params()
+
+	assertEqual(t, len(params), 3, "should return all parameters, including the out-of-the-box ones")
 }
 
 func tempDir(t *testing.T) (string, func()) {

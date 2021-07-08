@@ -31,10 +31,28 @@ type Taskflow struct {
 	tasks   map[string]Task
 }
 
-// RegisteredTask represents a task that has been registered to a Taskflow.
-// It can be used as a dependency for another Task.
-type RegisteredTask struct {
-	name string
+// Tasks returns all registered tasks.
+func (f *Taskflow) Tasks() []RegisteredTask {
+	var tasks []RegisteredTask
+	for _, task := range f.tasks {
+		tasks = append(tasks, RegisteredTask{
+			task: task,
+		})
+	}
+	return tasks
+}
+
+// Params returns all registered parameters.
+func (f *Taskflow) Params() []RegisteredParam {
+	// make sure OOTB parameters are registered
+	f.VerboseParam()
+	f.WorkDirParam()
+
+	var params []RegisteredParam
+	for _, param := range f.params {
+		params = append(params, param)
+	}
+	return params
 }
 
 // VerboseParam returns the out-of-the-box verbose parameter which controls the output behavior.
@@ -159,13 +177,13 @@ func (f *Taskflow) Register(task Task) RegisteredTask {
 		panic(fmt.Sprintf("%s task was already registered", task.Name))
 	}
 	for _, dep := range task.Deps {
-		if !f.isRegistered(dep.name) {
-			panic(fmt.Sprintf("invalid dependency %s", dep.name))
+		if !f.isRegistered(dep.task.Name) {
+			panic(fmt.Sprintf("invalid dependency %s", dep.task.Name))
 		}
 	}
 
 	f.tasks[task.Name] = task
-	return RegisteredTask{name: task.Name}
+	return RegisteredTask{task: task}
 }
 
 // Run runs provided tasks and all their dependencies.

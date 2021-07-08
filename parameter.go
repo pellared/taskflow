@@ -54,6 +54,8 @@ type ParamValue interface {
 // It can be used as a parameter for a Task.
 type RegisteredParam interface {
 	Name() string
+	Usage() string
+	Default() string
 	value(tf *TF) ParamValue
 }
 
@@ -67,6 +69,16 @@ type registeredParam struct {
 // Name returns the key of the parameter.
 func (p registeredParam) Name() string {
 	return p.name
+}
+
+// Usage returns the parameter's description.
+func (p registeredParam) Usage() string {
+	return p.usage
+}
+
+// Default returns the parameter's default value formated as string.
+func (p registeredParam) Default() string {
+	return p.newValue().String()
 }
 
 func (p registeredParam) value(tf *TF) ParamValue {

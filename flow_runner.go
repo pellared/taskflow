@@ -121,10 +121,10 @@ func (f *flowRunner) parseArguments(args []string) ([]string, bool, error) {
 }
 
 func (f *flowRunner) tasksToRun(tasks []string) []string {
-	if len(tasks) > 0 || (f.defaultTask.name == "") {
+	if len(tasks) > 0 || (f.defaultTask.task.Name == "") {
 		return tasks
 	}
-	return []string{f.defaultTask.name}
+	return []string{f.defaultTask.task.Name}
 }
 
 func (f *flowRunner) pushWorkingDir() (func(), error) {
@@ -168,7 +168,7 @@ func (f *flowRunner) run(ctx context.Context, name string, executed map[string]b
 		return nil
 	}
 	for _, dep := range task.Deps {
-		if err := f.run(ctx, dep.name, executed); err != nil {
+		if err := f.run(ctx, dep.task.Name, executed); err != nil {
 			return err
 		}
 	}
@@ -308,7 +308,7 @@ func printUsage(f *flowRunner) {
 	}
 	w.Flush() //nolint // not checking errors when writing to output
 
-	if f.defaultTask.name != "" {
-		fmt.Fprintf(f.output, "Default task: %s\n", f.defaultTask.name)
+	if f.defaultTask.task.Name != "" {
+		fmt.Fprintf(f.output, "Default task: %s\n", f.defaultTask.task.Name)
 	}
 }
